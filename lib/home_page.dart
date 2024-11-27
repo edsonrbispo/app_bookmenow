@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -8,36 +10,37 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final List<Map<String, dynamic>> servicos = [
-    {
-      "titulo": "Corte de Cabelo",
-      "descricao":
-          "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s",
-      "preco": 50.00,
-      "imagemUrl": "https://via.placeholder.com/150"
-    },
-    {
-      "titulo": "Manicure e Pedicure",
-      "descricao":
-          "Text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s",
-      "preco": 35.00,
-      "imagemUrl": "https://via.placeholder.com/150"
-    },
-    {
-      "titulo": "Mecânico de Auto",
-      "descricao":
-          "Printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s",
-      "preco": 100.00,
-      "imagemUrl": "https://via.placeholder.com/150"
-    },
-    {
-      "titulo": "Aula de Infomática",
-      "descricao":
-          "Standard printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s",
-      "preco": 150.00,
-      "imagemUrl": "https://via.placeholder.com/150"
-    },
-  ];
+  List<dynamic> servicos = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchServicos();
+  }
+
+  Future<void> fetchServicos() async {
+    try {
+      final response = await http.get(Uri.parse(
+          'http://10.56.45.36/public/api/servicos')); // Substitua pelo seu endpoint
+      if (response.statusCode == 200) {
+        setState(() {
+          servicos = json.decode(response.body);
+          isLoading = false;
+        });
+      } else {
+        showError('Erro ao carregar serviços.');
+      }
+    } catch (e) {
+      showError('Erro: $e');
+    }
+  }
+
+  void showError(String message) {
+    setState(() => isLoading = false);
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,57 +91,60 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-      body: ListView.builder(
-        itemCount: servicos.length,
-        itemBuilder: (context, index) {
-          final servico = servicos[index];
-          return Card(
-            elevation: 0.5,
-            margin: const EdgeInsets.all(8.0),
-            color: const Color(0xFFfcfcfc),
-            child: Row(
-              children: [
-                Image.network(
-                  servico['imagemUrl'],
-                  width: 100,
-                  height: 100,
-                  fit: BoxFit.cover,
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          servico['titulo'],
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              itemCount: servicos.length,
+              itemBuilder: (context, index) {
+                final servico = servicos[index];
+                print(servico['fotos'][0]['imagem']);
+                return Card(
+                  elevation: 0.5,
+                  margin: const EdgeInsets.all(8.0),
+                  color: const Color(0xFFfcfcfc),
+                  child: Row(
+                    children: [
+                      Image.network(
+                        servico['fotos'][0]['imagem'],
+                        width: 100,
+                        height: 100,
+                        fit: BoxFit.cover,
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                servico['titulo'],
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.left,
+                              ),
+                              Text(
+                                servico['descricao'],
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                'R\$ ${double.parse(servico['valor']).toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
-                          textAlign: TextAlign.left,
                         ),
-                        Text(
-                          servico['descricao'],
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          'R\$ ${servico['preco'].toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
+                      )
+                    ],
                   ),
-                )
-              ],
+                );
+              },
             ),
-          );
-        },
-      ),
     );
   }
 }
