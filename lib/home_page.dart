@@ -16,30 +16,34 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    fetchServicos();
+    listaServicos();
   }
 
-  Future<void> fetchServicos() async {
+  Future<void> listaServicos() async {
     try {
-      final response = await http.get(Uri.parse(
-          'http://10.56.45.36/public/api/servicos')); // Substitua pelo seu endpoint
+      final response =
+          await http.get(Uri.parse('http://10.56.45.36/public/api/servicos'));
+
       if (response.statusCode == 200) {
         setState(() {
           servicos = json.decode(response.body);
           isLoading = false;
         });
-      } else {
-        showError('Erro ao carregar serviços.');
       }
     } catch (e) {
-      showError('Erro: $e');
+      mostrarError('Erro: $e');
     }
   }
 
-  void showError(String message) {
-    setState(() => isLoading = false);
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+  void mostrarError(String mensagem) {
+    setState(() {
+      isLoading = false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(mensagem),
+        ),
+      );
+    });
   }
 
   @override
@@ -97,7 +101,6 @@ class _HomePageState extends State<HomePage> {
               itemCount: servicos.length,
               itemBuilder: (context, index) {
                 final servico = servicos[index];
-                print(servico['fotos'][0]['imagem']);
                 return Card(
                   elevation: 0.5,
                   margin: const EdgeInsets.all(8.0),
